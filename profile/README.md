@@ -1,42 +1,60 @@
 # Typenx
 
-Typenx is a self-hostable anime discovery and library platform built around open addons.
+A self-hostable anime hub that ties tracking, metadata, recommendations, and your own media library together — and lets anyone plug in a new source.
 
-It brings together metadata from AniList, MyAnimeList, Kitsu, and your own media sources so you can browse anime, centralize seasons, manage addons, and build recommendation features without locking the project to one provider.
+If you watch anime, the tooling is fractured by design. AniList holds your tracking. MyAnimeList holds your scores from years ago. Kitsu mirrors the same data with a different schema. Your Plex or Jellyfin server holds the actual files. Your watch history lives in a fourth place. Recommendations come from whichever site happened to scrape you last.
 
-## Why It Exists
+Typenx is the layer that ties them together, runs on your own hardware, and stays open.
 
-Anime libraries are scattered across tracking sites, metadata providers, and personal media servers. Typenx is an attempt to make that ecosystem feel coherent:
+## What it is
 
-- Self-hosted Rust backend with SQLite, Postgres, MySQL, and MongoDB support.
-- React frontend for discovery, account flows, addon management, and library views.
-- Addon protocol for catalogs, search, metadata, recommendations, episodes, and optional video sources.
-- Official metadata addons for AniList, MyAnimeList, and Kitsu.
-- SDKs for TypeScript, Python, and Rust so contributors can build new sources quickly.
+A Rust backend, a React frontend, and an addon protocol. Every source — official or hobby, public or private — is a remote HTTP service that speaks the same schema. Typenx Core orchestrates them: it imports your AniList and MyAnimeList lists, asks metadata addons for catalogs and search, asks media addons for stream URLs, and runs its own recommendation model on top.
 
-## Start Here
+You host it. You own the database. You can read every line of the recommender. New sources are a few hundred lines of TypeScript, Python, or Rust away.
 
-- Star and follow the main backend: [typenx-core](https://github.com/typenx/typenx-core)
-- Try the frontend: [typenx-web](https://github.com/typenx/typenx-web)
-- Build an addon: [TypeScript SDK](https://github.com/typenx/typenx-addon-TS-sdk), [Python SDK](https://github.com/typenx/typenx-addon-python-sdk), or [Rust SDK](https://github.com/typenx/typenx-addon-rust-sdk)
+## Repos
 
-## Official Addons
+**Core**
 
-- [AniList](https://github.com/typenx/typenx-addon-anilist): metadata and recommendations from AniList.
-- [MyAnimeList](https://github.com/typenx/typenx-addon-myanimelist): metadata and recommendations from MAL.
-- [Kitsu](https://github.com/typenx/typenx-addon-kitsu): metadata and recommendations from Kitsu.
-- [Season Centralizer](https://github.com/typenx/typenx-addon-season-centralizer): merges split seasons into one clean show entry.
-- [Video Library](https://github.com/typenx/typenx-addon-video-library): exposes user-controlled self-hosted video URLs.
+- [typenx-core](https://github.com/typenx/typenx-core) — the Rust backend (Axum, multi-database storage, addon orchestration, recommendations).
+- [typenx-web](https://github.com/typenx/typenx-web) — the React frontend (discovery, library, account, addon management).
 
-## Help Build Typenx
+**Official metadata addons**
 
-If you like self-hosted media tools, anime discovery, or addon-first platforms, starring [typenx-core](https://github.com/typenx/typenx-core) helps more contributors find the project.
+- [typenx-addon-anilist](https://github.com/typenx/typenx-addon-anilist) — AniList catalogs, search, and metadata.
+- [typenx-addon-myanimelist](https://github.com/typenx/typenx-addon-myanimelist) — MyAnimeList catalogs, search, and metadata.
+- [typenx-addon-kitsu](https://github.com/typenx/typenx-addon-kitsu) — Kitsu catalogs, search, and metadata.
 
-Useful ways to help:
+**Utility addons**
 
-- Star the repos you want to see grow.
-- Open issues for rough edges, setup friction, or addon ideas.
-- Build a small addon for a provider you already use.
-- Share screenshots, feedback, or deployment notes.
+- [typenx-addon-season-centralizer](https://github.com/typenx/typenx-addon-season-centralizer) — collapses split-season releases (`Attack on Titan`, `Attack on Titan Season 2`, `Attack on Titan: The Final Season`) into one show with merged episode numbering.
 
-Typenx is early, but the shape is there: a self-hosted anime hub that gets better every time someone plugs in a new source.
+**Personal-media addons**
+
+- [typenx-addon-plex](https://github.com/typenx/typenx-addon-plex) — expose a Plex server as a Typenx video source.
+- [typenx-addon-jellyfin](https://github.com/typenx/typenx-addon-jellyfin) — expose a Jellyfin server as a Typenx video source.
+- [typenx-addon-video-library](https://github.com/typenx/typenx-addon-video-library) — point Typenx at a JSON manifest of URLs you already control.
+
+**SDKs for addon authors**
+
+- [typenx-addon-TS-sdk](https://github.com/typenx/typenx-addon-TS-sdk)
+- [typenx-addon-python-sdk](https://github.com/typenx/typenx-addon-python-sdk)
+- [typenx-addon-rust-sdk](https://github.com/typenx/typenx-addon-rust-sdk)
+
+## What makes it interesting
+
+**An addon protocol that doesn't compromise.** Addons are remote HTTP services with a typed schema, not bundled plugins. Same shape whether they're official, run on your own laptop, or shared between a handful of friends. Manifests declare the resources they provide — `catalog`, `search`, `anime_meta`, `recommendations`, `video_sources` — and Typenx routes calls accordingly.
+
+**A recommender you can actually inspect.** Typenx's recommender is an explainable hybrid model that builds a taste profile from your AniList and MyAnimeList list scores, watch progress, dropped/paused/completed states, and addon metadata (genres, tags, studios, source, era). It runs locally, returns reason snippets when asked, and ships with a training script that fits an implicit-feedback matrix-factorization model on your own database.
+
+**Storage you choose.** SQLite for a homelab, Postgres for a real server, MySQL if you already run one, MongoDB if that's your stack. Same repository boundary, same code paths, one environment variable away.
+
+**Tracking and watching, finally connected.** Sync your AniList list once, then resolve "where can I watch episode 7" against Plex, Jellyfin, or whatever video addon you've registered. The split between metadata and playback is intentional, so any source can drop out without breaking the rest of your library.
+
+## Where to start
+
+If you want to run Typenx, start at [typenx-core](https://github.com/typenx/typenx-core). The quick start is `cargo run -p typenx-server` plus a script that brings up the official addons next to it.
+
+If you want to build something on top, pick an SDK and read the addon protocol — your service runs anywhere and shows up in any Typenx instance that points at it.
+
+If you want to follow development, watch the org. Issues, design notes, and active work all live inside the individual repos.
